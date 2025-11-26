@@ -6,7 +6,7 @@
     <title>letsvibe - The Future of Coding</title>
     
     <!-- Favicon -->
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><circle cx='20' cy='20' r='20' fill='%23ffffff'/><path d='M14 26L26 14M14 14L26 26' stroke='%23000' stroke-width='4' stroke-linecap='round'/></svg>">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><circle cx='20' cy='20' r='20' fill='%23ffffff'/><path d='M16 14 L10 20 L16 26' stroke='%23000' stroke-width='3' stroke-linecap='round' stroke-linejoin='round' fill='none'/><path d='M24 14 L30 20 L24 26' stroke='%23000' stroke-width='3' stroke-linecap='round' stroke-linejoin='round' fill='none'/></svg>">
 
     <!-- Libraries -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -15,7 +15,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     
     <!-- Animation Libraries -->
-    <!-- Switched to stable @studio-freight/lenis version to fix global scope 'x' syntax error -->
     <script src="https://cdn.jsdelivr.net/npm/@studio-freight/lenis@1.0.42/dist/lenis.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
@@ -30,7 +29,8 @@
                         brand: {
                             purple: '#7C3AED',
                             blue: '#3B82F6',
-                            accent: '#F472B6'
+                            accent: '#F472B6',
+                            cyan: '#22d3ee'
                         }
                     },
                     fontFamily: {
@@ -79,6 +79,12 @@
             color: white;
         }
 
+        /* 3D Tilt Preserve */
+        .preserve-3d {
+            transform-style: preserve-3d;
+            perspective: 1000px;
+        }
+
         /* Lenis required styles */
         html.lenis, html.lenis body {
             height: auto;
@@ -114,17 +120,14 @@
         const Terminal = (p) => <IconBase {...p}><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></IconBase>;
         const Zap = (p) => <IconBase {...p}><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></IconBase>;
         const Menu = (p) => <IconBase {...p}><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="18" x2="20" y2="18"/></IconBase>;
-        // Renamed 'X' to 'CloseIcon' to avoid potential global variable collisions
         const CloseIcon = (p) => <IconBase {...p}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></IconBase>;
+        const Sparkles = (p) => <IconBase {...p}><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></IconBase>;
+        const Globe = (p) => <IconBase {...p}><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></IconBase>;
 
         // --- Hooks ---
         const useSmoothScroll = () => {
             useEffect(() => {
-                // Safety check to ensure Lenis is loaded
-                if (typeof Lenis === 'undefined') {
-                    console.warn('Lenis script not loaded yet. Smooth scrolling disabled.');
-                    return;
-                }
+                if (typeof Lenis === 'undefined') return;
 
                 const lenis = new Lenis({
                     duration: 1.2,
@@ -218,32 +221,102 @@
 
         const Hero = () => {
             const container = useRef(null);
-            const titleRef = useRef(null);
             const videoRef = useRef(null);
+            const tiltRef = useRef(null);
 
             useEffect(() => {
                 const ctx = gsap.context(() => {
                     // Staggered Title Reveal
-                    const tl = gsap.timeline();
-                    
-                    tl.from(".hero-line", {
+                    gsap.from(".hero-line", {
                         y: 100,
                         opacity: 0,
                         duration: 1.2,
                         stagger: 0.15,
                         ease: "power3.out",
                         delay: 0.5
-                    })
-                    .from(videoRef.current, {
+                    });
+
+                    // Initial Pop In of the Card
+                    gsap.from(videoRef.current, {
                         scale: 0.8,
                         opacity: 0,
                         duration: 1.5,
-                        ease: "expo.out"
-                    }, "-=1");
+                        ease: "expo.out",
+                        delay: 0.2
+                    });
+
+                    // --- Interactive "Vibe Generation" Animation ---
+                    const tl = gsap.timeline({ repeat: -1, repeatDelay: 2 });
+                    
+                    // 1. Typewriter Effect
+                    tl.to(".cursor-blink", { opacity: 0, duration: 0.1, repeat: 7, yoyo: true })
+                      // Removed typing animation for prompt text
+                      .to(".send-button", { scale: 1.2, duration: 0.2, yoyo: true, repeat: 1 }, "+=0.2")
+                    
+                    // 2. Generation Pulse
+                      .to(".prompt-status", { text: "Reasoning with Gemini 3.0...", color: "#22d3ee", duration: 0.2 })
+                      .to(".canvas-loader", { width: "100%", duration: 0.8, ease: "power2.inOut" })
+                      .to(".canvas-loader", { opacity: 0, duration: 0.2 })
+                    
+                    // 3. Magical UI Build (Staggered Expansion)
+                      // App Shell
+                      .to(".app-shell", { opacity: 1, scale: 1, duration: 0.5, ease: "back.out(1.2)" })
+                      // Header
+                      .fromTo(".app-header", { y: -20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.4 }, "<0.2")
+                      // Hero Image
+                      .fromTo(".app-hero-img", { scale: 0.9, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.6, ease: "power3.out" }, "<0.1")
+                      // Floating Widgets (drift in)
+                      .fromTo(".app-widget", 
+                          { x: 50, opacity: 0 }, 
+                          { x: 0, opacity: 1, stagger: 0.1, duration: 0.5, ease: "power2.out" }, "<0.2"
+                      )
+                      .to(".prompt-status", { text: "Generated in 0.8s", color: "#4ade80", duration: 0.2 }, "<+0.5")
+
+                    // 4. Hold & Interact
+                      .to(".app-widget", { y: -5, duration: 2, yoyo: true, repeat: 1, ease: "sine.inOut" })
+
+                    // 5. Reset
+                      .to([".app-shell", ".app-widget", ".app-header", ".app-hero-img"], { opacity: 0, scale: 0.9, duration: 0.4, ease: "power2.in" })
+                      // Removed clearing of prompt text
+                      .to(".prompt-status", { text: "Ready to vibe...", color: "#9ca3af", duration: 0.2 }, "<")
+                      .set(".canvas-loader", { width: "0%", opacity: 1 });
 
                 }, container);
                 return () => ctx.revert();
             }, []);
+
+            // 3D Tilt Effect Logic
+            const handleMouseMove = (e) => {
+                if (!tiltRef.current) return;
+                
+                const card = tiltRef.current;
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                const centerX = rect.width / 2;
+                const centerY = rect.height / 2;
+                
+                const rotateX = ((y - centerY) / centerY) * -3; 
+                const rotateY = ((x - centerX) / centerX) * 3;
+
+                gsap.to(card, {
+                    rotationX: rotateX,
+                    rotationY: rotateY,
+                    duration: 0.5,
+                    ease: "power2.out"
+                });
+            };
+
+            const handleMouseLeave = () => {
+                if (!tiltRef.current) return;
+                gsap.to(tiltRef.current, {
+                    rotationX: 0,
+                    rotationY: 0,
+                    duration: 0.5,
+                    ease: "power2.out"
+                });
+            };
 
             return (
                 <header ref={container} className="relative min-h-screen flex flex-col justify-center px-6 pt-32 pb-20 overflow-hidden">
@@ -251,22 +324,22 @@
                     <div className="absolute right-0 top-0 w-[50vw] h-[50vw] bg-gradient-to-b from-purple-900/20 to-blue-900/20 blur-[120px] rounded-full pointer-events-none -z-10 translate-x-1/4 -translate-y-1/4"></div>
 
                     <div className="max-w-[90rem] mx-auto w-full grid lg:grid-cols-2 gap-16 items-center">
-                        <div>
+                        <div className="relative z-10">
                             <div className="mb-6 flex items-center gap-3 hero-line">
                                 <span className="flex h-2 w-2">
-                                  <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-green-400 opacity-75"></span>
-                                  <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                                  <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-brand-purple opacity-75"></span>
+                                  <span className="relative inline-flex rounded-full h-2 w-2 bg-brand-purple"></span>
                                 </span>
                                 <span className="font-mono text-sm uppercase tracking-widest text-gray-400">Accepting 2025 Cohort</span>
                             </div>
 
-                            <h1 className="text-[13vw] lg:text-[7vw] leading-[0.9] font-bold tracking-tighter mb-8 text-white">
-                                <div className="overflow-hidden"><span className="hero-line block">Code by</span></div>
-                                <div className="overflow-hidden"><span className="hero-line block text-transparent bg-clip-text bg-gradient-to-r from-white via-white to-gray-500">Vibration.</span></div>
+                            <h1 className="text-[12vw] lg:text-[7vw] leading-[0.9] font-bold tracking-tighter mb-8 text-white">
+                                <div className="overflow-hidden"><span className="hero-line block">Vibe Coding.</span></div>
+                                <div className="overflow-hidden"><span className="hero-line block text-transparent bg-clip-text bg-gradient-to-r from-white via-gray-200 to-gray-500">Taught Practically.</span></div>
                             </h1>
                             
                             <p className="hero-line text-lg md:text-xl text-gray-400 max-w-lg mb-10 leading-relaxed">
-                                Forget syntax memorization. Learn to conduct the symphony of <strong>Gemini 3</strong>, Project IDX, and Firebase. This is coding for the post-AI era.
+                                Forget syntax memorization. Learn to conduct the symphony of <strong>Gemini 3.0</strong>, <strong>Google AI Studio</strong>, and <strong>Supabase</strong>. This is coding for the post-AI era.
                             </p>
 
                             <div className="hero-line flex flex-wrap gap-4">
@@ -283,26 +356,105 @@
                             </div>
                         </div>
 
-                        {/* Visual / Video Placeholder */}
-                        <div ref={videoRef} className="relative aspect-square lg:aspect-[4/5] rounded-3xl overflow-hidden border border-white/10 bg-white/5 backdrop-blur-sm">
-                            <div className="absolute inset-0 bg-gradient-to-br from-brand-purple/10 to-brand-blue/10"></div>
-                            
-                            {/* Decorative UI Code Elements */}
-                            <div className="absolute top-8 left-8 right-8 bottom-8 flex flex-col justify-between">
-                                <div className="flex gap-2">
-                                    <div className="w-3 h-3 rounded-full bg-red-500/50"></div>
-                                    <div className="w-3 h-3 rounded-full bg-yellow-500/50"></div>
-                                    <div className="w-3 h-3 rounded-full bg-green-500/50"></div>
+                        {/* Interactive Visual - Canvas Simulator */}
+                        <div 
+                            ref={videoRef}
+                            className="preserve-3d perspective-1000 relative aspect-square lg:aspect-[4/3] flex items-center justify-center"
+                            onMouseMove={handleMouseMove}
+                            onMouseLeave={handleMouseLeave}
+                        >
+                            <div 
+                                ref={tiltRef}
+                                className="relative w-full h-full rounded-2xl overflow-hidden border border-white/10 bg-[#0A0A0A] shadow-2xl shadow-brand-purple/20 flex flex-col"
+                            >
+                                {/* Top Bar (Window Controls) */}
+                                <div className="h-10 border-b border-white/5 flex items-center px-4 justify-between bg-white/[0.02]">
+                                    <div className="flex gap-2">
+                                        <div className="w-3 h-3 rounded-full bg-red-500/20 border border-red-500/50"></div>
+                                        <div className="w-3 h-3 rounded-full bg-yellow-500/20 border border-yellow-500/50"></div>
+                                        <div className="w-3 h-3 rounded-full bg-green-500/20 border border-green-500/50"></div>
+                                    </div>
+                                    <div className="text-xs font-mono text-gray-600 flex items-center gap-2">
+                                        <span className="w-2 h-2 rounded-full bg-brand-purple"></span>
+                                        Gemini Canvas
+                                    </div>
                                 </div>
-                                <div className="font-mono text-sm text-brand-purple/80 p-4 bg-black/40 rounded-xl backdrop-blur-md border border-white/5">
-                                    &gt; Gemini.generate("Build me a future")<br/>
-                                    <span className="text-gray-500">Processing...</span><br/>
-                                    <span className="text-green-400">Done in 0.4s</span>
+
+                                {/* Main Canvas Area */}
+                                <div className="flex-1 relative p-6 md:p-8 flex items-center justify-center overflow-hidden">
+                                    {/* Grid Background */}
+                                    <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:32px_32px]"></div>
+                                    
+                                    {/* GENERATED APP UI SHELL */}
+                                    <div className="app-shell opacity-0 scale-95 relative w-full max-w-sm h-full max-h-[400px] bg-[#0F0F0F] rounded-2xl border border-white/10 shadow-2xl overflow-hidden flex flex-col">
+                                        
+                                        {/* App Header */}
+                                        <div className="app-header h-14 border-b border-white/5 flex items-center justify-between px-4 bg-white/5 backdrop-blur-md">
+                                            <div className="w-6 h-6 rounded bg-brand-cyan/20 flex items-center justify-center"><Globe className="w-3 h-3 text-brand-cyan" /></div>
+                                            <div className="w-8 h-8 rounded-full bg-white/10"></div>
+                                        </div>
+
+                                        {/* App Body */}
+                                        <div className="flex-1 p-4 flex flex-col gap-4 overflow-hidden relative">
+                                            {/* Hero Img */}
+                                            <div className="app-hero-img w-full h-32 rounded-lg bg-gradient-to-tr from-brand-blue/20 to-brand-purple/20 border border-white/5 relative overflow-hidden group">
+                                                <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?q=80&w=400&auto=format&fit=crop')] bg-cover bg-center opacity-40 mix-blend-overlay"></div>
+                                                <div className="absolute bottom-2 left-2 text-xs font-bold text-white/80">Explore Mars</div>
+                                            </div>
+
+                                            {/* Widgets Grid */}
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <div className="app-widget h-20 rounded-lg bg-white/5 border border-white/5 p-2 flex flex-col justify-between">
+                                                    <div className="w-6 h-6 rounded bg-brand-purple/20 flex items-center justify-center"><Zap className="w-3 h-3 text-brand-purple" /></div>
+                                                    <div className="w-12 h-1.5 bg-white/20 rounded"></div>
+                                                </div>
+                                                <div className="app-widget h-20 rounded-lg bg-white/5 border border-white/5 p-2 flex flex-col justify-between">
+                                                    <div className="w-6 h-6 rounded bg-brand-accent/20 flex items-center justify-center"><Sparkles className="w-3 h-3 text-brand-accent" /></div>
+                                                    <div className="w-16 h-1.5 bg-white/20 rounded"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Floating Label Badges (Decorations) */}
+                                        <div className="absolute top-20 -right-4 bg-black/80 backdrop-blur border border-white/20 px-2 py-1 rounded text-[10px] font-mono text-brand-cyan app-widget shadow-xl">
+                                            Maps API
+                                        </div>
+                                        <div className="absolute bottom-10 -left-2 bg-black/80 backdrop-blur border border-white/20 px-2 py-1 rounded text-[10px] font-mono text-brand-purple app-widget shadow-xl">
+                                            Flight Data
+                                        </div>
+
+                                    </div>
+                                    
+                                    {/* Canvas Loader Line (Progress Bar) */}
+                                    <div className="absolute top-0 left-0 h-0.5 bg-brand-cyan canvas-loader opacity-0 w-0"></div>
+                                </div>
+
+                                {/* Prompt Input Area */}
+                                <div className="p-4 bg-[#0A0A0A] border-t border-white/5 z-20">
+                                    <div className="flex items-center justify-between mb-2">
+                                         <div className="text-[10px] font-mono text-gray-500 uppercase tracking-wider flex items-center gap-2">
+                                            <span className="w-1.5 h-1.5 rounded-full bg-brand-cyan animate-pulse"></span>
+                                            Gemini 3.0 Pro
+                                        </div>
+                                        <div className="prompt-status text-[10px] font-mono text-gray-500 transition-colors duration-300">
+                                            Ready to vibe...
+                                        </div>
+                                    </div>
+                                    <div className="relative bg-white/5 rounded-lg border border-white/10 p-3 flex items-center">
+                                        <div className="font-mono text-sm text-white/90 w-full truncate">
+                                            <span className="text-gray-500 mr-2">$</span>
+                                            {/* Removed prompt text and cursor blink elements */}
+                                        </div>
+                                        <div className="send-button w-6 h-6 rounded bg-white text-black flex items-center justify-center ml-2 shrink-0">
+                                            <ArrowUpRight className="w-3 h-3" />
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             
-                            {/* Floating Elements */}
-                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-40 h-40 bg-gradient-to-tr from-brand-blue to-brand-purple rounded-full blur-[60px] opacity-40 animate-pulse"></div>
+                            {/* Ambient Glows behind Canvas */}
+                            <div className="absolute -top-10 -right-10 w-40 h-40 bg-brand-blue/30 rounded-full blur-[80px] -z-10 animate-pulse"></div>
+                            <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-brand-purple/30 rounded-full blur-[80px] -z-10 animate-pulse" style={{animationDelay: '1.5s'}}></div>
                         </div>
                     </div>
                 </header>
@@ -326,8 +478,8 @@
                             <div key={i} className="flex items-center gap-20 text-6xl font-bold text-white/5 select-none">
                                 <span>LETSVIBE</span>
                                 <span className="text-brand-purple/10">GEMINI 3</span>
-                                <span>PROJECT IDX</span>
-                                <span className="text-brand-blue/10">FIREBASE</span>
+                                <span>GOOGLE AI STUDIO</span>
+                                <span className="text-brand-blue/10">SUPABASE</span>
                             </div>
                         ))}
                     </div>
@@ -385,7 +537,7 @@
                             <FeatureItem 
                                 icon={Terminal}
                                 title="Cloud Native"
-                                desc="Ditch localhost. We teach the Google Project IDX workflow—full stack environments in the cloud, integrated with Gemini."
+                                desc="Ditch localhost. We teach the Google AI Studio workflow—fast prototyping environments in the cloud, integrated with Gemini."
                                 index={1}
                             />
                             <FeatureItem 
@@ -446,9 +598,9 @@
             
             const modules = [
                 { title: "Prompt Engineering & Reasoning", desc: "Master the art of speaking to Gemini 3. Learn context window management, few-shot prompting, and chain-of-thought architectures." },
-                { title: "Project IDX Environment", desc: "Setting up a cloud-based development environment that mirrors production. Integrated terminal, previews, and AI assistance." },
+                { title: "Google AI Studio Environment", desc: "Setting up a cloud-based prototyping environment optimized for Gemini. Integrated testing, previews, and API generation." },
                 { title: "Building Multimodal Agents", desc: "Create agents that can analyze video feeds and audio streams in real-time. The future of interaction design." },
-                { title: "Production Firebase", desc: "Secure, scalable backend infrastructure. Auth, Firestore, and Edge Functions deployed directly from your AI workflow." },
+                { title: "Production Supabase", desc: "Secure, scalable backend infrastructure. Auth, Postgres, and Edge Functions deployed directly from your AI workflow." },
                 { title: "Monetization Strategy", desc: "How to package your AI wrappers into SaaS products. Stripe integration, pricing models, and user retention." }
             ];
 
@@ -500,6 +652,8 @@
             
             // GSAP ScrollTrigger Global Config
             useEffect(() => {
+                // Register TextPlugin if needed, though simple text replacement is done via DOM or standard GSAP
+                // For the typing effect we used basic CSS/Text content animation logic without the heavy TextPlugin to keep it light
                 gsap.registerPlugin(ScrollTrigger);
             }, []);
 
